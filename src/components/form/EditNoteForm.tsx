@@ -242,7 +242,7 @@ export default function EditNoteForm({ note, onSubmit, loading }: EditNoteFormPr
         >
           {loading ? (
             <div className="flex items-center">
-              <LoadingSpinner size="sm" color="white" />
+              <LoadingSpinner size="sm\" color="white" />
               <span className="ml-2">Zapisywanie...</span>
             </div>
           ) : (
