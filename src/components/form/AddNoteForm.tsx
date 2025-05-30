@@ -237,7 +237,7 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
         >
           {loading ? (
             <div className="flex items-center">
-              <LoadingSpinner size="sm" color="white" />
+              <LoadingSpinner size="sm\" color="white" />
               <span className="ml-2">Dodawanie...</span>
             </div>
           ) : (
