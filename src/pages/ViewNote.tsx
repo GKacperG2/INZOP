@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Edit2 } from 'lucide-react'
 import { 
   LoadingSpinner, 
   NoteHeader, 
@@ -8,6 +8,7 @@ import {
   RatingList 
 } from '../components/ui'
 import { RatingForm } from '../components/form'
+import EditNoteForm from '../components/form/EditNoteForm'
 import { useViewNote } from '../hooks'
 
 function ViewNote() {
@@ -22,8 +23,13 @@ function ViewNote() {
     loading,
     submitting,
     existingRatingId,
+    isEditing,
+    setIsEditing,
+    editLoading,
     handleDownload,
-    handleSubmitRating
+    handleSubmitRating,
+    handleEditSubmit,
+    canEdit
   } = useViewNote()
 
   if (loading) {
@@ -58,38 +64,57 @@ function ViewNote() {
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6">
-            <NoteHeader note={note} onDownload={handleDownload} />
-            <NoteDetails note={note} />
-            
-            {note.content && <NoteContent content={note.content} />}
+            {isEditing ? (
+              <EditNoteForm
+                note={note}
+                onSubmit={handleEditSubmit}
+                loading={editLoading}
+              />
+            ) : (
+              <>
+                <div className="flex justify-between items-start">
+                  <NoteHeader note={note} onDownload={handleDownload} />
+                  {canEdit && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edytuj
+                    </button>
+                  )}
+                </div>
+                <NoteDetails note={note} />
+                {note.content && <NoteContent content={note.content} />}
+              </>
+            )}
           </div>
         </div>
 
-        {/* Ratings Section */}
-        <div className="mt-8 space-y-8">
-          {/* User Rating Form */}
-          <div>
-            <RatingForm
-              userRating={userRating}
-              comment={comment}
-              submitting={submitting}
-              onRatingChange={setUserRating}
-              onCommentChange={setComment}
-              onSubmit={handleSubmitRating}
-              existingRatingId={existingRatingId}
-            />
-          </div>
+        {!isEditing && (
+          <div className="mt-8 space-y-8">
+            <div>
+              <RatingForm
+                userRating={userRating}
+                comment={comment}
+                submitting={submitting}
+                onRatingChange={setUserRating}
+                onCommentChange={setComment}
+                onSubmit={handleSubmitRating}
+                existingRatingId={existingRatingId}
+              />
+            </div>
 
-          {/* All Ratings */}
-          <div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Wszystkie oceny ({ratings.length})
-              </h3>
-              <RatingList ratings={ratings} />
+            <div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Wszystkie oceny ({ratings.length})
+                </h3>
+                <RatingList ratings={ratings} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
