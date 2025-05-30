@@ -15,6 +15,7 @@ interface SearchableDropdownProps {
   onAdd?: (name: string) => void;
   label?: string;
   required?: boolean;
+  error?: string;
 }
 
 export default function SearchableDropdown({
@@ -25,7 +26,8 @@ export default function SearchableDropdown({
   allowAdd = false,
   onAdd,
   label,
-  required = false
+  required = false,
+  error
 }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +47,6 @@ export default function SearchableDropdown({
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setSearchTerm('');
       }
     };
 
@@ -54,20 +55,15 @@ export default function SearchableDropdown({
   }, []);
 
   // Filter options based on search term
-  const filteredOptions = searchTerm.length >= 2 
-    ? options.filter(option => 
-        option.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : options;
+  const filteredOptions = options.filter(option => 
+    option.name.toLowerCase().includes((searchTerm || displayValue).toLowerCase())
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
     setDisplayValue(term);
-    
-    if (term.length >= 2) {
-      setIsOpen(true);
-    }
+    setIsOpen(true);
     
     // If input is cleared, clear the selection
     if (term === '') {
@@ -84,8 +80,8 @@ export default function SearchableDropdown({
   };
 
   const handleAddNew = () => {
-    if (searchTerm.trim() && onAdd) {
-      onAdd(searchTerm.trim());
+    if (displayValue.trim() && onAdd) {
+      onAdd(displayValue.trim());
       setSearchTerm('');
       setIsOpen(false);
     }
@@ -98,9 +94,9 @@ export default function SearchableDropdown({
     inputRef.current?.focus();
   };
 
-  const showAddOption = allowAdd && searchTerm.length >= 2 && 
+  const showAddOption = allowAdd && displayValue && 
     !filteredOptions.some(option => 
-      option.name.toLowerCase() === searchTerm.toLowerCase()
+      option.name.toLowerCase() === displayValue.toLowerCase()
     );
 
   return (
@@ -115,18 +111,20 @@ export default function SearchableDropdown({
         <input
           ref={inputRef}
           type="text"
-          value={searchTerm || displayValue}
+          value={displayValue}
           onChange={handleInputChange}
-          onFocus={() => {
-            if (searchTerm.length >= 2) setIsOpen(true);
-          }}
+          onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          className={`w-full px-3 py-2 pr-10 border rounded-md focus:ring-2 focus:ring-offset-0 ${
+            error
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+              : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-200'
+          }`}
           required={required}
         />
         
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-          {value && (
+          {displayValue && (
             <button
               type="button"
               onClick={clearSelection}
@@ -139,20 +137,23 @@ export default function SearchableDropdown({
         </div>
       </div>
 
-      {isOpen && (searchTerm.length >= 2 || filteredOptions.length > 0) && (
+      {error && (
+        <p className="mt-1 text-sm text-red-600">{error}</p>
+      )}
+
+      {showAddOption && (
+        <button
+          type="button"
+          onClick={handleAddNew}
+          className="mt-2 w-full flex items-center justify-center px-3 py-2 border border-indigo-500 text-indigo-600 rounded-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 animate-pulse"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Dodaj "{displayValue}"
+        </button>
+      )}
+
+      {isOpen && filteredOptions.length > 0 && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-          {searchTerm.length < 2 && (
-            <div className="px-3 py-2 text-sm text-gray-500">
-              Wpisz co najmniej 2 litery aby wyszukać
-            </div>
-          )}
-          
-          {searchTerm.length >= 2 && filteredOptions.length === 0 && !showAddOption && (
-            <div className="px-3 py-2 text-sm text-gray-500">
-              Brak wyników
-            </div>
-          )}
-          
           {filteredOptions.map((option) => (
             <button
               key={option.id}
@@ -163,17 +164,6 @@ export default function SearchableDropdown({
               {option.name}
             </button>
           ))}
-          
-          {showAddOption && (
-            <button
-              type="button"
-              onClick={handleAddNew}
-              className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-blue-600 flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Dodaj "{searchTerm}"
-            </button>
-          )}
         </div>
       )}
     </div>

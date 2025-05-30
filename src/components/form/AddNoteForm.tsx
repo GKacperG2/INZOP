@@ -30,6 +30,7 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [professors, setProfessors] = useState<Professor[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchData();
@@ -48,9 +49,46 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
     }
   };
 
+  const validateFields = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!validateForm.title(formData.title)) {
+      newErrors.title = VALIDATION_MESSAGES.TITLE_TOO_SHORT;
+    }
+
+    if (!formData.subject) {
+      newErrors.subject = 'Wybierz lub dodaj przedmiot';
+    }
+
+    if (!formData.professor) {
+      newErrors.professor = 'Wybierz lub dodaj prowadzącego';
+    }
+
+    if (!validateForm.year(formData.year)) {
+      newErrors.year = VALIDATION_MESSAGES.INVALID_YEAR;
+    }
+
+    if (formData.noteType === 'file') {
+      if (!formData.file) {
+        newErrors.file = 'Proszę wybrać plik';
+      } else if (!isValidFileType(formData.file)) {
+        newErrors.file = VALIDATION_MESSAGES.INVALID_FILE_TYPE;
+      } else if (formData.file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
+        newErrors.file = VALIDATION_MESSAGES.FILE_TOO_LARGE;
+      }
+    }
+
+    if (formData.noteType === 'text' && !validateForm.content(formData.content)) {
+      newErrors.content = VALIDATION_MESSAGES.CONTENT_TOO_SHORT;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleAddSubject = async (name: string) => {
     if (!name.trim()) {
-      toast.error('Wprowadź nazwę przedmiotu');
+      setErrors(prev => ({ ...prev, subject: 'Wprowadź nazwę przedmiotu' }));
       return;
     }
 
@@ -58,6 +96,7 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
       const newSubjectData = await subjectService.create(name);
       setSubjects([...subjects, newSubjectData]);
       setFormData(prev => ({ ...prev, subject: newSubjectData.id }));
+      setErrors(prev => ({ ...prev, subject: '' }));
       toast.success('Dodano nowy przedmiot');
     } catch {
       toast.error('Nie udało się dodać przedmiotu');
@@ -66,7 +105,7 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
 
   const handleAddProfessor = async (name: string) => {
     if (!name.trim()) {
-      toast.error('Wprowadź nazwę prowadzącego');
+      setErrors(prev => ({ ...prev, professor: 'Wprowadź nazwę prowadzącego' }));
       return;
     }
 
@@ -74,6 +113,7 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
       const newProfessorData = await professorService.create(name);
       setProfessors([...professors, newProfessorData]);
       setFormData(prev => ({ ...prev, professor: newProfessorData.id }));
+      setErrors(prev => ({ ...prev, professor: '' }));
       toast.success('Dodano nowego prowadzącego');
     } catch {
       toast.error('Nie udało się dodać prowadzącego');
@@ -83,31 +123,8 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Walidacja formularza
-    if (!validateForm.title(formData.title)) {
-      toast.error(VALIDATION_MESSAGES.TITLE_TOO_SHORT);
-      return;
-    }
-
-    if (formData.noteType === 'file') {
-      if (!formData.file) {
-        toast.error('Proszę wybrać plik');
-        return;
-      }
-      
-      if (!isValidFileType(formData.file)) {
-        toast.error(VALIDATION_MESSAGES.INVALID_FILE_TYPE);
-        return;
-      }
-      
-      if (formData.file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
-        toast.error(VALIDATION_MESSAGES.FILE_TOO_LARGE);
-        return;
-      }
-    }
-
-    if (formData.noteType === 'text' && !validateForm.content(formData.content)) {
-      toast.error(VALIDATION_MESSAGES.CONTENT_TOO_SHORT);
+    if (!validateFields()) {
+      toast.error('Proszę poprawić błędy w formularzu');
       return;
     }
 
@@ -123,16 +140,27 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
             required
             value={formData.title}
             onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className={`block w-full rounded-md shadow-sm focus:ring-2 focus:ring-offset-0 ${
+              errors.title
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-200'
+            }`}
           />
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+          )}
         </FormField>
 
         <FormField label="Przedmiot" required>
           <SubjectSelector
             subjects={subjects}
             selectedSubject={formData.subject}
-            onSubjectChange={(subjectId) => setFormData(prev => ({ ...prev, subject: subjectId }))}
+            onSubjectChange={(subjectId) => {
+              setFormData(prev => ({ ...prev, subject: subjectId }));
+              setErrors(prev => ({ ...prev, subject: '' }));
+            }}
             onAddSubject={handleAddSubject}
+            error={errors.subject}
           />
         </FormField>
 
@@ -140,8 +168,12 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
           <ProfessorSelector
             professors={professors}
             selectedProfessor={formData.professor}
-            onProfessorChange={(professorId) => setFormData(prev => ({ ...prev, professor: professorId }))}
+            onProfessorChange={(professorId) => {
+              setFormData(prev => ({ ...prev, professor: professorId }));
+              setErrors(prev => ({ ...prev, professor: '' }));
+            }}
             onAddProfessor={handleAddProfessor}
+            error={errors.professor}
           />
         </FormField>
 
@@ -153,8 +185,15 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
             min="2000"
             max="2100"
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className={`block w-full rounded-md shadow-sm focus:ring-2 focus:ring-offset-0 ${
+              errors.year
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-200'
+            }`}
           />
+          {errors.year && (
+            <p className="mt-1 text-sm text-red-600">{errors.year}</p>
+          )}
         </FormField>
 
         <FormField label="Typ notatki">
@@ -165,14 +204,30 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
         </FormField>
 
         {formData.noteType === 'file' ? (
-          <FileUpload
-            onFileChange={(file) => setFormData(prev => ({ ...prev, file }))}
-          />
+          <div>
+            <FileUpload
+              onFileChange={(file) => {
+                setFormData(prev => ({ ...prev, file }));
+                setErrors(prev => ({ ...prev, file: '' }));
+              }}
+            />
+            {errors.file && (
+              <p className="mt-1 text-sm text-red-600">{errors.file}</p>
+            )}
+          </div>
         ) : (
-          <TextEditor
-            content={formData.content}
-            onChange={(content) => setFormData(prev => ({ ...prev, content }))}
-          />
+          <div>
+            <TextEditor
+              content={formData.content}
+              onChange={(content) => {
+                setFormData(prev => ({ ...prev, content }));
+                setErrors(prev => ({ ...prev, content: '' }));
+              }}
+            />
+            {errors.content && (
+              <p className="mt-1 text-sm text-red-600">{errors.content}</p>
+            )}
+          </div>
         )}
 
         <button

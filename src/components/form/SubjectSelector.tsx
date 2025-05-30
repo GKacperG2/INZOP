@@ -6,13 +6,15 @@ interface SubjectSelectorProps {
   selectedSubject: string;
   onSubjectChange: (subjectId: string) => void;
   onAddSubject: (name: string) => void;
+  error?: string;
 }
 
 export default function SubjectSelector({
   subjects,
   selectedSubject,
   onSubjectChange,
-  onAddSubject
+  onAddSubject,
+  error
 }: SubjectSelectorProps) {
   return (
     <SearchableDropdown
@@ -23,6 +25,7 @@ export default function SubjectSelector({
       allowAdd={true}
       onAdd={onAddSubject}
       required={true}
+      error={error}
     />
   );
 }

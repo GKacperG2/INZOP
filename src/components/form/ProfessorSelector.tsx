@@ -6,13 +6,15 @@ interface ProfessorSelectorProps {
   selectedProfessor: string;
   onProfessorChange: (professorId: string) => void;
   onAddProfessor: (name: string) => void;
+  error?: string;
 }
 
 export default function ProfessorSelector({
   professors,
   selectedProfessor,
   onProfessorChange,
-  onAddProfessor
+  onAddProfessor,
+  error
 }: ProfessorSelectorProps) {
   return (
     <SearchableDropdown
@@ -23,6 +25,7 @@ export default function ProfessorSelector({
       allowAdd={true}
       onAdd={onAddProfessor}
       required={true}
+      error={error}
     />
   );
 }
