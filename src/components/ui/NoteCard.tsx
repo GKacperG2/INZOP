@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Star } from 'lucide-react';
+import { Trash2, Star, User } from 'lucide-react';
 import { Note } from '../../types';
 
 interface NoteCardProps {
@@ -28,9 +28,35 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
     >
       <div className="p-6">
         <div className="flex justify-between items-start">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {note.title}
-          </h2>
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              {note.user_profiles?.avatar_url ? (
+                <img
+                  src={note.user_profiles.avatar_url}
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {note.title}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {note.user_profiles?.username}
+                {note.user_profiles?.university && (
+                  <span className="block text-xs text-gray-400">
+                    {note.user_profiles.university}
+                    {note.user_profiles.major && ` - ${note.user_profiles.major}`}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
           {note.user_id === currentUserId && (
             <button
               onClick={handleDeleteClick}
@@ -41,16 +67,6 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
             </button>
           )}
         </div>
-        
-        <p className="text-sm text-gray-500 mt-2">
-          Autor: {note.user_profiles?.username}
-          {note.user_profiles?.university && (
-            <span className="block text-xs text-gray-400">
-              {note.user_profiles.university}
-              {note.user_profiles.major && ` - ${note.user_profiles.major}`}
-            </span>
-          )}
-        </p>
         
         <div className="mt-4 space-y-2">
           <p className="text-sm text-gray-600">

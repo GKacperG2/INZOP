@@ -1,6 +1,6 @@
 import React from 'react'
 import { Note } from '../../types'
-import { GraduationCap, Building2, BookOpen } from 'lucide-react'
+import { GraduationCap, Building2, BookOpen, User } from 'lucide-react'
 
 interface NoteDetailsProps {
   note: Note
@@ -32,34 +32,49 @@ export const NoteDetails: React.FC<NoteDetailsProps> = ({ note }) => {
 
       <div className="border-t pt-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Informacje o autorze</h3>
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <GraduationCap className="w-5 h-5 text-gray-400 mr-2" />
-            <div>
-              <p className="text-sm text-gray-500">Autor</p>
-              <p className="font-medium">{note.user_profiles?.username}</p>
-            </div>
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            {note.user_profiles?.avatar_url ? (
+              <img
+                src={note.user_profiles.avatar_url}
+                alt="Avatar"
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                <User className="w-7 h-7 text-gray-400" />
+              </div>
+            )}
           </div>
-          
-          {note.user_profiles?.university && (
+          <div className="space-y-4">
             <div className="flex items-center">
-              <Building2 className="w-5 h-5 text-gray-400 mr-2" />
+              <GraduationCap className="w-5 h-5 text-gray-400 mr-2" />
               <div>
-                <p className="text-sm text-gray-500">Uczelnia</p>
-                <p className="font-medium">{note.user_profiles.university}</p>
+                <p className="text-sm text-gray-500">Autor</p>
+                <p className="font-medium">{note.user_profiles?.username}</p>
               </div>
             </div>
-          )}
-          
-          {note.user_profiles?.major && (
-            <div className="flex items-center">
-              <BookOpen className="w-5 h-5 text-gray-400 mr-2" />
-              <div>
-                <p className="text-sm text-gray-500">Kierunek</p>
-                <p className="font-medium">{note.user_profiles.major}</p>
+            
+            {note.user_profiles?.university && (
+              <div className="flex items-center">
+                <Building2 className="w-5 h-5 text-gray-400 mr-2" />
+                <div>
+                  <p className="text-sm text-gray-500">Uczelnia</p>
+                  <p className="font-medium">{note.user_profiles.university}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            
+            {note.user_profiles?.major && (
+              <div className="flex items-center">
+                <BookOpen className="w-5 h-5 text-gray-400 mr-2" />
+                <div>
+                  <p className="text-sm text-gray-500">Kierunek</p>
+                  <p className="font-medium">{note.user_profiles.major}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
