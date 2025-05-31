@@ -28,7 +28,7 @@ export const useViewNote = () => {
         .from('notes')
         .select(`
           *,
-          user_profiles (username, university, major),
+          user_profiles (username, university, major, avatar_url),
           subjects (name),
           professors (name)
         `)
@@ -47,7 +47,8 @@ export const useViewNote = () => {
           user_id,
           created_at,
           user_profiles (
-            username
+            username,
+            avatar_url
           )
         `)
         .eq('note_id', id)
