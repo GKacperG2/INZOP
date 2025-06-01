@@ -79,7 +79,7 @@ export default function FilterBar({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             {/* Search Input */}
             <div className="relative md:col-span-2 lg:col-span-1">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/3 transform -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Szukaj po tytule..."

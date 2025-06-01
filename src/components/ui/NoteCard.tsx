@@ -24,11 +24,11 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-60 flex flex-col"
     >
-      <div className="p-6">
+      <div className="p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-start">
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-3 min-w-0 flex-1">
             <div className="flex-shrink-0">
               {note.user_profiles?.avatar_url ? (
                 <img
@@ -42,25 +42,25 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
                 </div>
               )}
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl font-semibold text-gray-900 truncate">
                 {note.title}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {note.user_profiles?.username}
+              <div className="text-sm text-gray-500 mt-1 h-10 overflow-hidden">
+                <p className="truncate">{note.user_profiles?.username}</p>
                 {note.user_profiles?.university && (
-                  <span className="block text-xs text-gray-400">
+                  <p className="text-xs text-gray-400 truncate">
                     {note.user_profiles.university}
                     {note.user_profiles.major && ` - ${note.user_profiles.major}`}
-                  </span>
+                  </p>
                 )}
-              </p>
+              </div>
             </div>
           </div>
           {note.user_id === currentUserId && (
             <button
               onClick={handleDeleteClick}
-              className="text-red-500 hover:text-red-700 ml-2"
+              className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0"
               aria-label="Usuń notatkę"
             >
               <Trash2 className="w-5 h-5" />
@@ -68,11 +68,11 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
           )}
         </div>
         
-        <div className="mt-4 space-y-2">
-          <p className="text-sm text-gray-600">
+        <div className="mt-4 space-y-2 flex-1">
+          <p className="text-sm text-gray-600 truncate">
             Przedmiot: {note.subjects?.name}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 truncate">
             Prowadzący: {note.professors?.name}
           </p>
         </div>
