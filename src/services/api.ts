@@ -69,6 +69,15 @@ export const noteService = {
     if (error) throw error;
   },
 
+  async update(noteId: string, noteData: Partial<CreateNoteData>): Promise<void> {
+    const { error } = await supabase
+      .from('notes')
+      .update(noteData)
+      .eq('id', noteId);
+
+    if (error) throw error;
+  },
+
   getFileType(file: File): 'pdf' | 'image' {
     const fileExt = file.name.split('.').pop()?.toLowerCase();
     return fileExt === 'pdf' ? 'pdf' : 'image';

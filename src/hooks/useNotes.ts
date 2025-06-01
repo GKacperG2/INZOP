@@ -19,7 +19,7 @@ export function useNotes() {
           *,
           subjects (name),
           professors (name),
-          user_profiles (username, university, major)
+          user_profiles (username, university, major, avatar_url)
         `)
         .order('created_at', { ascending: false });
 

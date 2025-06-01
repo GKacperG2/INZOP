@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Subject, Professor, AddNoteFormData } from '../../types';
+import { Subject, Professor, Note, AddNoteFormData } from '../../types';
 import { subjectService, professorService } from '../../services/api';
 import { validateForm, isValidFileType } from '../../utils/validators';
 import { VALIDATION_MESSAGES, FILE_UPLOAD_LIMITS } from '../../constants';
@@ -12,20 +12,21 @@ import FileUpload from './FileUpload';
 import TextEditor from './TextEditor';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
-interface AddNoteFormProps {
+interface EditNoteFormProps {
+  note: Note;
   onSubmit: (formData: AddNoteFormData) => Promise<void>;
   loading: boolean;
 }
 
-export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
+export default function EditNoteForm({ note, onSubmit, loading }: EditNoteFormProps) {
   const [formData, setFormData] = useState<AddNoteFormData>({
-    title: '',
-    subject: '',
-    professor: '',
-    year: '',
-    noteType: 'file',
+    title: note.title,
+    subject: note.subject_id,
+    professor: note.professor_id,
+    year: note.year.toString(),
+    noteType: note.file_path ? 'file' : 'text',
     file: null,
-    content: ''
+    content: note.content || ''
   });
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -68,10 +69,8 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
       newErrors.year = VALIDATION_MESSAGES.INVALID_YEAR;
     }
 
-    if (formData.noteType === 'file') {
-      if (!formData.file) {
-        newErrors.file = 'Proszę wybrać plik';
-      } else if (!isValidFileType(formData.file)) {
+    if (formData.noteType === 'file' && formData.file) {
+      if (!isValidFileType(formData.file)) {
         newErrors.file = VALIDATION_MESSAGES.INVALID_FILE_TYPE;
       } else if (formData.file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
         newErrors.file = VALIDATION_MESSAGES.FILE_TOO_LARGE;
@@ -205,6 +204,12 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
 
         {formData.noteType === 'file' ? (
           <div>
+            {note.file_path && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">Aktualny plik: {note.file_path.split('/').pop()}</p>
+                <p className="text-sm text-gray-500">Dodaj nowy plik, aby zastąpić obecny</p>
+              </div>
+            )}
             <FileUpload
               onFileChange={(file) => {
                 setFormData(prev => ({ ...prev, file }));
@@ -238,10 +243,10 @@ export default function AddNoteForm({ onSubmit, loading }: AddNoteFormProps) {
           {loading ? (
             <div className="flex items-center">
               <LoadingSpinner size="sm\" color="white" />
-              <span className="ml-2">Dodawanie...</span>
+              <span className="ml-2">Zapisywanie...</span>
             </div>
           ) : (
-            'Dodaj notatkę'
+            'Zapisz zmiany'
           )}
         </button>
       </form>

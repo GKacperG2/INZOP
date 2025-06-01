@@ -33,6 +33,7 @@ export interface Note {
     username: string;
     university: string | null;
     major: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -75,6 +76,7 @@ export interface Rating {
   user_id: string;
   user_profiles: {
     username: string;
+    avatar_url: string | null;
   };
   created_at: string;
 }

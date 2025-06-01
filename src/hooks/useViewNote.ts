@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Note, Rating } from '../types'
+import { Note, Rating, AddNoteFormData } from '../types'
+import { noteService } from '../services/api'
 
 export const useViewNote = () => {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [note, setNote] = useState<Note | null>(null)
   const [ratings, setRatings] = useState<Rating[]>([])
   const [userRating, setUserRating] = useState(0)
@@ -15,6 +17,8 @@ export const useViewNote = () => {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [existingRatingId, setExistingRatingId] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
 
   const fetchNoteAndRatings = useCallback(async () => {
     if (!id) return
@@ -24,7 +28,7 @@ export const useViewNote = () => {
         .from('notes')
         .select(`
           *,
-          user_profiles (username),
+          user_profiles (username, university, major, avatar_url),
           subjects (name),
           professors (name)
         `)
@@ -43,7 +47,8 @@ export const useViewNote = () => {
           user_id,
           created_at,
           user_profiles (
-            username
+            username,
+            avatar_url
           )
         `)
         .eq('note_id', id)
@@ -51,7 +56,6 @@ export const useViewNote = () => {
 
       if (ratingsError) throw ratingsError
       
-      // Transform the data to match the Rating interface
       const transformedRatings = ratingsData?.map(rating => ({
         ...rating,
         user_profiles: Array.isArray(rating.user_profiles) 
@@ -61,7 +65,6 @@ export const useViewNote = () => {
       
       setRatings(transformedRatings)
 
-      // Check if user has already rated
       const userExistingRating = ratingsData?.find(r => r.user_id === user?.id)
       if (userExistingRating) {
         setUserRating(userExistingRating.stars)
@@ -74,10 +77,11 @@ export const useViewNote = () => {
       }
     } catch {
       toast.error('Nie udało się załadować notatki')
+      navigate('/')
     } finally {
       setLoading(false)
     }
-  }, [id, user?.id])
+  }, [id, user?.id, navigate])
 
   useEffect(() => {
     if (id) {
@@ -98,12 +102,10 @@ export const useViewNote = () => {
 
       if (error) throw error
 
-      // Record download
       await supabase.from('downloads').insert([
         { note_id: id, user_id: user?.id }
       ])
 
-      // Create download link
       const url = window.URL.createObjectURL(data)
       const link = document.createElement('a')
       link.href = url
@@ -129,7 +131,6 @@ export const useViewNote = () => {
     try {
       let error
       if (existingRatingId) {
-        // Update existing rating
         const { error: updateError } = await supabase
           .from('ratings')
           .update({
@@ -139,7 +140,6 @@ export const useViewNote = () => {
           .eq('id', existingRatingId)
         error = updateError
       } else {
-        // Insert new rating
         const { error: insertError } = await supabase
           .from('ratings')
           .insert([{
@@ -153,12 +153,48 @@ export const useViewNote = () => {
 
       if (error) throw error
 
-      toast.success(existingRatingId ? 'Ocena została zaktualizowana pomyślnie' : 'Ocena została dodana pomyślnie')
+      toast.success(existingRatingId ? 'Ocena została zaktualizowana' : 'Ocena została dodana')
       await fetchNoteAndRatings()
     } catch {
       toast.error('Nie udało się wysłać oceny')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleEditSubmit = async (formData: AddNoteFormData) => {
+    if (!note || !id) return
+
+    setEditLoading(true)
+    try {
+      let filePath = note.file_path
+      let fileType = note.file_type
+
+      if (formData.noteType === 'file' && formData.file) {
+        filePath = await noteService.uploadFile(user!.id, formData.file)
+        fileType = noteService.getFileType(formData.file)
+      } else if (formData.noteType === 'text') {
+        filePath = null
+        fileType = 'text'
+      }
+
+      await noteService.update(id, {
+        title: formData.title,
+        subject_id: formData.subject,
+        professor_id: formData.professor,
+        year: parseInt(formData.year),
+        file_path: filePath,
+        file_type: fileType,
+        content: formData.noteType === 'text' ? formData.content : null
+      })
+
+      toast.success('Notatka została zaktualizowana')
+      setIsEditing(false)
+      await fetchNoteAndRatings()
+    } catch {
+      toast.error('Nie udało się zaktualizować notatki')
+    } finally {
+      setEditLoading(false)
     }
   }
 
@@ -172,7 +208,12 @@ export const useViewNote = () => {
     loading,
     submitting,
     existingRatingId,
+    isEditing,
+    setIsEditing,
+    editLoading,
     handleDownload,
-    handleSubmitRating
+    handleSubmitRating,
+    handleEditSubmit,
+    canEdit: note?.user_id === user?.id
   }
 }
