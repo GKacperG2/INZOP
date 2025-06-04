@@ -38,6 +38,19 @@ export const useViewNote = () => {
       if (noteError) throw noteError
       setNote(noteData)
 
+      await fetchRatings()
+    } catch {
+      toast.error('Nie udało się załadować notatki')
+      navigate('/')
+    } finally {
+      setLoading(false)
+    }
+  }, [id, navigate])
+
+  const fetchRatings = async () => {
+    if (!id) return
+
+    try {
       const { data: ratingsData, error: ratingsError } = await supabase
         .from('ratings')
         .select(`
@@ -75,13 +88,21 @@ export const useViewNote = () => {
         setComment('')
         setExistingRatingId(null)
       }
-    } catch {
-      toast.error('Nie udało się załadować notatki')
-      navigate('/')
-    } finally {
-      setLoading(false)
+
+      // Fetch updated note to get new average rating
+      const { data: updatedNote } = await supabase
+        .from('notes')
+        .select('average_rating')
+        .eq('id', id)
+        .single()
+
+      if (updatedNote) {
+        setNote(prev => prev ? { ...prev, average_rating: updatedNote.average_rating } : null)
+      }
+    } catch (error) {
+      console.error('Error fetching ratings:', error)
     }
-  }, [id, user?.id, navigate])
+  }
 
   useEffect(() => {
     if (id) {
@@ -154,7 +175,7 @@ export const useViewNote = () => {
       if (error) throw error
 
       toast.success(existingRatingId ? 'Ocena została zaktualizowana' : 'Ocena została dodana')
-      await fetchNoteAndRatings()
+      await fetchRatings() // This will update both ratings list and note's average rating
     } catch {
       toast.error('Nie udało się wysłać oceny')
     } finally {
