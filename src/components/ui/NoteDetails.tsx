@@ -4,9 +4,10 @@ import { GraduationCap, Building2, BookOpen, User } from 'lucide-react'
 
 interface NoteDetailsProps {
   note: Note
+  averageRating: number
 }
 
-export const NoteDetails: React.FC<NoteDetailsProps> = ({ note }) => {
+export const NoteDetails: React.FC<NoteDetailsProps> = ({ note, averageRating }) => {
   return (
     <div className="mt-6 space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -25,7 +26,7 @@ export const NoteDetails: React.FC<NoteDetailsProps> = ({ note }) => {
         <div>
           <p className="text-sm text-gray-500">Średnia ocena</p>
           <p className="font-medium">
-            {note.average_rating ? `${note.average_rating.toFixed(1)}/5` : 'Brak ocen'}
+            {averageRating > 0 ? `${averageRating.toFixed(1)}/5` : 'Brak ocen'}
           </p>
         </div>
       </div>

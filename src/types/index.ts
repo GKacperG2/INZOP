@@ -23,6 +23,7 @@ export interface Note {
   created_at?: string;
   updated_at?: string;
   average_rating?: number;
+  calculated_average_rating?: number;
   subjects?: {
     name: string;
   };
@@ -35,6 +36,9 @@ export interface Note {
     major: string | null;
     avatar_url: string | null;
   };
+  ratings?: {
+    stars: number;
+  }[];
 }
 
 export interface CreateNoteData {

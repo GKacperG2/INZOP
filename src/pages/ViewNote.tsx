@@ -32,6 +32,11 @@ function ViewNote() {
     canEdit
   } = useViewNote()
 
+  // Funkcja do liczenia średniej z opinii
+  const averageRating = ratings.length > 0
+    ? Number((ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1))
+    : 0;
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -84,7 +89,7 @@ function ViewNote() {
                     </button>
                   )}
                 </div>
-                <NoteDetails note={note} />
+                <NoteDetails note={note} averageRating={averageRating} />
                 {note.content && <NoteContent content={note.content} />}
               </>
             )}

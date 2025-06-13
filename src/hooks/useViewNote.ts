@@ -20,34 +20,7 @@ export const useViewNote = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
 
-  const fetchNoteAndRatings = useCallback(async () => {
-    if (!id) return
-
-    try {
-      const { data: noteData, error: noteError } = await supabase
-        .from('notes')
-        .select(`
-          *,
-          user_profiles (username, university, major, avatar_url),
-          subjects (name),
-          professors (name)
-        `)
-        .eq('id', id)
-        .single()
-
-      if (noteError) throw noteError
-      setNote(noteData)
-
-      await fetchRatings()
-    } catch {
-      toast.error('Nie udało się załadować notatki')
-      navigate('/')
-    } finally {
-      setLoading(false)
-    }
-  }, [id, navigate])
-
-  const fetchRatings = async () => {
+  const fetchRatings = useCallback(async () => {
     if (!id) return
 
     try {
@@ -88,27 +61,112 @@ export const useViewNote = () => {
         setComment('')
         setExistingRatingId(null)
       }
-
-      // Fetch updated note to get new average rating
-      const { data: updatedNote } = await supabase
-        .from('notes')
-        .select('average_rating')
-        .eq('id', id)
-        .single()
-
-      if (updatedNote) {
-        setNote(prev => prev ? { ...prev, average_rating: updatedNote.average_rating } : null)
-      }
     } catch (error) {
       console.error('Error fetching ratings:', error)
     }
-  }
+  }, [id, user?.id])
+
+  const fetchNoteAndRatings = useCallback(async () => {
+    if (!id) return
+
+    try {
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .select(`
+          *,
+          user_profiles (username, university, major, avatar_url),
+          subjects (name),
+          professors (name)
+        `)
+        .eq('id', id)
+        .single()
+
+      if (noteError) throw noteError
+      setNote(noteData)
+
+      await fetchRatings()
+    } catch {
+      toast.error('Nie udało się załadować notatki')
+      navigate('/')
+    } finally {
+      setLoading(false)
+    }
+  }, [id, navigate, fetchRatings])
 
   useEffect(() => {
     if (id) {
       fetchNoteAndRatings()
     }
   }, [id, fetchNoteAndRatings])
+
+  // Add cross-tab communication using localStorage events
+  useEffect(() => {
+    if (!id) return
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `note-rating-updated-${id}`) {
+        // Another tab updated a rating for this note, refresh our data
+        console.log('Detected rating update from another tab')
+        fetchNoteAndRatings()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [id, fetchNoteAndRatings])
+
+  // Also add real-time subscription as backup
+  useEffect(() => {
+    if (!id) return
+
+    const channel = supabase
+      .channel(`note-ratings-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notes',
+          filter: `id=eq.${id}`,
+        },
+        (payload) => {
+          console.log('Note updated via real-time:', payload)
+          setNote(prev => prev ? { ...prev, ...payload.new } : null)
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public', 
+          table: 'ratings',
+          filter: `note_id=eq.${id}`,
+        },
+        () => {
+          console.log('Rating changed via real-time')
+          fetchRatings()
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [id, fetchRatings])
+
+  // Add periodic refresh as ultimate fallback (every 2 minutes)
+  useEffect(() => {
+    if (!id) return
+
+    const interval = setInterval(() => {
+      console.log('Periodic refresh of ratings')
+      fetchRatings()
+    }, 120000) // 2 minutes
+
+    return () => clearInterval(interval)
+  }, [id, fetchRatings])
 
   const handleDownload = async () => {
     if (!note?.file_path) {
@@ -175,7 +233,13 @@ export const useViewNote = () => {
       if (error) throw error
 
       toast.success(existingRatingId ? 'Ocena została zaktualizowana' : 'Ocena została dodana')
-      await fetchRatings() // This will update both ratings list and note's average rating
+      
+      // Notify other tabs about the rating update
+      localStorage.setItem(`note-rating-updated-${id}`, Date.now().toString())
+      localStorage.removeItem(`note-rating-updated-${id}`)
+      
+      // Refresh our own data
+      await fetchRatings()
     } catch {
       toast.error('Nie udało się wysłać oceny')
     } finally {

@@ -19,12 +19,27 @@ export function useNotes() {
           *,
           subjects (name),
           professors (name),
-          user_profiles (username, university, major, avatar_url)
+          user_profiles (username, university, major, avatar_url),
+          ratings (stars)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotes(data || []);
+
+      // Oblicz średnią ocenę dla każdej notatki na podstawie opinii
+      const notesWithCalculatedRating = data?.map(note => {
+        const noteRatings = note.ratings || [];
+        const averageRating = noteRatings.length > 0
+          ? Number((noteRatings.reduce((sum: number, r: { stars: number }) => sum + r.stars, 0) / noteRatings.length).toFixed(1))
+          : 0;
+        
+        return {
+          ...note,
+          calculated_average_rating: averageRating
+        };
+      }) || [];
+
+      setNotes(notesWithCalculatedRating);
     } catch (err) {
       console.error('Error fetching notes:', err);
       const errorMessage = 'Nie udało się załadować notatek';

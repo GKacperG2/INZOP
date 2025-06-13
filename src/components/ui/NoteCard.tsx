@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Star, User, Calendar, BookOpen, GraduationCap } from 'lucide-react';
+import { Trash2, User, Calendar, BookOpen, GraduationCap } from 'lucide-react';
 import { Note } from '../../types';
+import { StarRating } from '../ui'
 
 interface NoteCardProps {
   note: Note;
@@ -101,16 +102,7 @@ export default function NoteCard({ note, currentUserId, onDelete }: NoteCardProp
 
         <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
           <div className="flex items-center">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className={`w-4 h-4 ${
-                  star <= Math.round(note.average_rating || 0)
-                    ? 'text-yellow-400 fill-current'
-                    : 'text-gray-300'
-                }`}
-              />
-            ))}
+            <StarRating rating={note.calculated_average_rating || 0} onRatingChange={() => {}} readonly size="sm" />
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
             note.file_type === 'text' 

@@ -81,10 +81,10 @@ export function useNoteFilters(notes: Note[]) {
           return b.title.toLowerCase().localeCompare(a.title.toLowerCase());
         
         case 'rating-desc':
-          return (b.average_rating || 0) - (a.average_rating || 0);
+          return (b.calculated_average_rating || 0) - (a.calculated_average_rating || 0);
         
         case 'rating-asc':
-          return (a.average_rating || 0) - (b.average_rating || 0);
+          return (a.calculated_average_rating || 0) - (b.calculated_average_rating || 0);
         
         default:
           return 0;
